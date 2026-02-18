@@ -1,5 +1,20 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { PermissionsAndroid, Platform } from 'react-native';
+import {
+    getMessaging,
+    getInitialNotification,
+    getToken,
+    onMessage,
+    onNotificationOpenedApp,
+    onTokenRefresh,
+    registerDeviceForRemoteMessages,
+} from '@react-native-firebase/messaging';
+
+import notifee, { EventType as NotifeeEventType } from '@notifee/react-native';
+
+import { displayRemoteMessageNotification, ensureDefaultChannel } from '../utils/notifications/notifeeNotifications';
+import { navigateToNotifications } from '../components/navigation/navigationRef';
 
 import API from '../utils/api/apiClient';
 import {
@@ -219,6 +234,130 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         bootstrapAuth();
     }, [bootstrapAuth]);
+
+    // Android push notifications: request permission, register token, and handle foreground messages.
+    useEffect(() => {
+        if (Platform.OS !== 'android') return;
+        if (status !== 'authenticated') return;
+
+        let unsubscribeOnMessage = null;
+        let unsubscribeOnTokenRefresh = null;
+        let unsubscribeOnNotificationOpened = null;
+        let unsubscribeNotifeeForeground = null;
+
+        const messagingInstance = getMessaging();
+
+        const ensurePermission = async () => {
+            // Android 13+ requires POST_NOTIFICATIONS runtime permission.
+            if (Platform.Version >= 33) {
+                try {
+                    const granted = await PermissionsAndroid.request(
+                        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+                    );
+                    return granted === PermissionsAndroid.RESULTS.GRANTED;
+                } catch {
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        const registerToken = async (token) => {
+            if (typeof token !== 'string' || token.trim().length === 0) return;
+            try {
+                await API.post('/api/v1/push/device-token', { token: token.trim() });
+            } catch {
+                // ignore (app can continue without push registration)
+            }
+        };
+
+        const initPush = async () => {
+            const permitted = await ensurePermission();
+            if (!permitted) return;
+
+            try {
+                await ensureDefaultChannel();
+            } catch {
+                // ignore
+            }
+
+            try {
+                await registerDeviceForRemoteMessages(messagingInstance);
+            } catch {
+                // ignore
+            }
+
+            try {
+                const token = await getToken(messagingInstance);
+                await registerToken(token);
+            } catch {
+                // ignore
+            }
+
+            // Navigate when user taps a system notification (background -> foreground).
+            try {
+                unsubscribeOnNotificationOpened = onNotificationOpenedApp(messagingInstance, () => {
+                    navigateToNotifications();
+                });
+            } catch {
+                // ignore
+            }
+
+            // Navigate when app is cold-started by tapping a system notification.
+            try {
+                const initial = await getInitialNotification(messagingInstance);
+                if (initial) {
+                    navigateToNotifications();
+                }
+            } catch {
+                // ignore
+            }
+
+            // Navigate when user taps a Notifee local notification (foreground).
+            try {
+                unsubscribeNotifeeForeground = notifee.onForegroundEvent(({ type }) => {
+                    if (type === NotifeeEventType.PRESS) {
+                        navigateToNotifications();
+                    }
+                });
+            } catch {
+                // ignore
+            }
+
+            // Navigate when app is cold-started by tapping a Notifee notification.
+            try {
+                const initialNotifee = await notifee.getInitialNotification();
+                if (initialNotifee) {
+                    navigateToNotifications();
+                }
+            } catch {
+                // ignore
+            }
+
+            unsubscribeOnTokenRefresh = onTokenRefresh(messagingInstance, async (token) => {
+                await registerToken(token);
+            });
+
+            unsubscribeOnMessage = onMessage(messagingInstance, async (remoteMessage) => {
+                try {
+                    // FCM does not show notification UI while app is in the foreground.
+                    // Display a local notification so users still see it.
+                    await displayRemoteMessageNotification(remoteMessage);
+                } catch {
+                    // ignore
+                }
+            });
+        };
+
+        initPush();
+
+        return () => {
+            if (typeof unsubscribeOnMessage === 'function') unsubscribeOnMessage();
+            if (typeof unsubscribeOnTokenRefresh === 'function') unsubscribeOnTokenRefresh();
+            if (typeof unsubscribeOnNotificationOpened === 'function') unsubscribeOnNotificationOpened();
+            if (typeof unsubscribeNotifeeForeground === 'function') unsubscribeNotifeeForeground();
+        };
+    }, [status]);
 
     // Keep the cached profile in sync after auth/refresh.
     useEffect(() => {

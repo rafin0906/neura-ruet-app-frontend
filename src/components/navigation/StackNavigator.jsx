@@ -3,6 +3,8 @@ import React from 'react'
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import { flushPendingNavigation, navigationRef } from './navigationRef';
+
 import { AuthProvider, useAuth } from '../../context/AuthContext';
 import SplashScreen from '../splash/SplashScreen';
 
@@ -94,7 +96,15 @@ const RootNavigator = () => {
 const StackNavigator = () => {
   return (
     <AuthProvider>
-      <NavigationContainer>
+      <NavigationContainer
+        ref={navigationRef}
+        onReady={() => {
+          flushPendingNavigation();
+        }}
+        onStateChange={() => {
+          flushPendingNavigation();
+        }}
+      >
         <RootNavigator />
       </NavigationContainer>
     </AuthProvider>

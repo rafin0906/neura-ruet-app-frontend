@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "942328100850",
+    "project_id": "neuraruet",
+    "storage_bucket": "neuraruet.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:942328100850:android:b3619841f9a01a63289d6b",
+        "android_client_info": {
+          "package_name": "com.frontend"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBMHDRPtTG7i735xgQFeIYGv0W_P6rwl6E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

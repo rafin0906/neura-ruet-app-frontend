@@ -2,6 +2,17 @@ import React, { useEffect } from 'react';
 import BootSplash from 'react-native-bootsplash';
 import StackNavigator from './src/components/navigation/StackNavigator';
 
+import notifee, { EventType } from '@notifee/react-native';
+import {
+  getMessaging,
+  getInitialNotification,
+  onNotificationOpenedApp,
+} from '@react-native-firebase/messaging';
+
+import { navigateToNotifications } from './src/components/navigation/navigationRef';
+
+
+
 export default function App() {
   useEffect(() => {
     const init = async () => {
@@ -35,6 +46,53 @@ export default function App() {
         // ignore
       }
     });
+  }, []);
+
+  // Navigate to Notifications screen when user taps a notification.
+  useEffect(() => {
+    const messagingInstance = getMessaging();
+
+    const unsubscribeOpened = onNotificationOpenedApp(messagingInstance, (remoteMessage) => {
+      if (remoteMessage?.data?.screen === 'Notifications') {
+        navigateToNotifications();
+      }
+    });
+
+    const unsubscribeNotifee = notifee.onForegroundEvent(({ type, detail }) => {
+      if (type === EventType.PRESS) {
+        const screen = detail?.notification?.data?.screen;
+        if (screen === 'Notifications') {
+          navigateToNotifications();
+        }
+      }
+    });
+
+    (async () => {
+      try {
+        const initialFcm = await getInitialNotification(messagingInstance);
+        if (initialFcm && initialFcm?.data?.screen === 'Notifications') {
+          navigateToNotifications();
+          return;
+        }
+      } catch {
+        // ignore
+      }
+
+      try {
+        const initialNotifee = await notifee.getInitialNotification();
+        const screen = initialNotifee?.notification?.data?.screen;
+        if (initialNotifee && screen === 'Notifications') {
+          navigateToNotifications();
+        }
+      } catch {
+        // ignore
+      }
+    })();
+
+    return () => {
+      if (typeof unsubscribeOpened === 'function') unsubscribeOpened();
+      if (typeof unsubscribeNotifee === 'function') unsubscribeNotifee();
+    };
   }, []);
 
   return (

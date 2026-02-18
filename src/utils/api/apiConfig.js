@@ -13,11 +13,26 @@
 // If your backend is mounted under a prefix (e.g. /api/v1), include it here.
 const DEV_BASE_URL = 'http://127.0.0.1:8000';
 
-// Your production/live server base URL.
-const PROD_BASE_URL = 'https://<YOUR_LIVE_DOMAIN_OR_IP>';
+// Your production/live server base URL (deployed testing).
+// Replace with your deployed backend URL. Example: https://neura-ruet-app.onrender.com
+const PROD_BASE_URL = 'https://neura-ruet-app.onrender.com';
+export const BASE_URL = 'http://127.0.0.1:8000';
 
 // React Native provides __DEV__ globally.
-export const BASE_URL = __DEV__ ? DEV_BASE_URL : PROD_BASE_URL;
+/* Quick switch options
+ - Option A (local development): uncomment the next line to force frontend to use local backend.
+     
+     // If using Android emulator, you may prefer:
+     // export const BASE_URL = 'http://10.0.2.2:8000';
+
+ - Option B (deployed testing): uncomment the next line to force frontend to use deployed backend.
+
+
+By default the app uses the development flag to choose the URL automatically:
+
+*/
+// export const BASE_URL = 'https://neura-ruet-app.onrender.com';
+// export const BASE_URL = __DEV__ ? DEV_BASE_URL : PROD_BASE_URL;
 
 // Request timeout in milliseconds.
 // Keep it reasonable so the UI can recover from bad networks.

@@ -13,10 +13,9 @@ const Toggle = ({ label, value, onToggle }) => {
     );
 };
 
-const QuickSettingsToggles = ({ notificationOn, setNotificationOn, lightMode, setLightMode }) => {
+const QuickSettingsToggles = ({ lightMode, setLightMode }) => {
     return (
         <View style={styles.container}>
-            <Toggle label="Notification On/Off" value={notificationOn} onToggle={() => setNotificationOn((v) => !v)} />
             <Toggle label="Light Mode" value={lightMode} onToggle={() => setLightMode((v) => !v)} />
         </View>
     );

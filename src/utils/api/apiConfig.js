@@ -16,7 +16,7 @@ const DEV_BASE_URL = 'http://127.0.0.1:8000';
 // Your production/live server base URL (deployed testing).
 // Replace with your deployed backend URL. Example: https://neura-ruet-app.onrender.com
 const PROD_BASE_URL = 'https://neura-ruet-app.onrender.com';
-export const BASE_URL = 'http://127.0.0.1:8000';
+// export const BASE_URL = 'http://127.0.0.1:8000';
 
 // React Native provides __DEV__ globally.
 /* Quick switch options
@@ -31,7 +31,7 @@ export const BASE_URL = 'http://127.0.0.1:8000';
 By default the app uses the development flag to choose the URL automatically:
 
 */
-// export const BASE_URL = 'https://neura-ruet-app.onrender.com';
+export const BASE_URL = 'https://neura-ruet-app.onrender.com';
 // export const BASE_URL = __DEV__ ? DEV_BASE_URL : PROD_BASE_URL;
 
 // Request timeout in milliseconds.
